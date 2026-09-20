@@ -1,0 +1,36 @@
+---
+description: Remote Keyboard agent
+alwaysApply: true
+---
+
+# Remote Keyboard agent
+
+Start **every** response with exactly: `[AmL] `
+
+Remote Keyboard is a standalone AmL product (`one.aml.remotekeyboard`).
+Checkout: `C:\Users\ambru\source\repos\aml-systems\remote-keyboard`
+
+It is **not** AmL Secure Keyboard (the IME at `aml-secure-keyboard`).
+
+## Project map
+
+| Area | Path |
+|---|---|
+| Flutter Android client | `app/` |
+| Bluetooth HID + BLE | `app/android/app/src/main/kotlin/one/aml/remotekeyboard/` |
+| Desktop helper | `helper/` |
+| Release scripts | `scripts/` |
+
+## Before you start
+
+If `graphify-out/graph.json` exists, prefer `graphify query` from **this**
+repo. After code changes: `graphify update .` here. Never query MessageMe.
+
+## Hard gates
+
+- Do not vendor `aml_ui` or bird PNGs. Import `package:aml_ui/aml_ui.dart`.
+- Settings always start with `SettingsAboutHero`.
+- Keep `FlutterActivity` (not `FlutterFragmentActivity`).
+- Intel Mac helper `MACOSX_DEPLOYMENT_TARGET=11.7`. Do not raise that floor.
+- Client APK / OTA / AmL One deploy only when the user asks in this conversation.
+- Distinct from the store listing `keyboard` (AmL Secure Keyboard IME).

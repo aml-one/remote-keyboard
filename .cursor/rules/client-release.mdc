@@ -1,0 +1,21 @@
+---
+description: Never build, publish, or OTA-deploy Remote Keyboard without explicit user approval
+alwaysApply: true
+---
+
+# Client release approval
+
+**Never build, publish, or OTA-deploy the Remote Keyboard client without the user
+explicitly asking in that conversation.**
+
+## Forbidden without an explicit request
+
+- `scripts/build-android.ps1` in release mode
+- `flutter build` in release mode
+- Any version bump
+- OTA upload or AmL One deploy
+
+## Allowed at any time
+
+- Debug builds and `flutter run`
+- Analyzer and tests

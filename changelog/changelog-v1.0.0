@@ -1,0 +1,12 @@
+# v1.0.0
+
+## Features
+[feature] Bluetooth HID keyboard and mouse that a computer can pair without extra software
+[feature] Desktop helper for Windows, Ubuntu, and macOS (Intel from 11.7, Apple Silicon) when HID is unavailable
+[feature] Compact trackpad with left/right click and two-finger scroll
+[feature] Portrait and landscape layouts, QWERTY or AZERTY, AmL Keyboard look options and extra palettes including dark themes
+[feature] AmL Remote mark and still hummingbird on the space bar
+
+## Improvements
+
+## Bug fixes

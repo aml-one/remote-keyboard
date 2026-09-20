@@ -1,0 +1,20 @@
+---
+description: Graphify for Remote Keyboard only — never MessageMe
+alwaysApply: true
+---
+
+# Graphify — Remote Keyboard (`remote-keyboard`)
+
+Use this graph **only** when the task is Remote Keyboard. Never run `graphify` in MessageMe (`messageme`) for this product.
+
+Repo root: `C:\Users\ambru\source\repos\aml-systems\remote-keyboard`
+
+```powershell
+Set-Location 'C:\Users\ambru\source\repos\aml-systems\remote-keyboard'
+graphify query "<question>"
+graphify path "<A>" "<B>"
+graphify explain "<concept>"
+graphify update .
+```
+
+If `graphify-out/graph.json` is missing, run `graphify .` **here**. After code changes: `graphify update .` from this root.

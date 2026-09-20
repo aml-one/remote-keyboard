@@ -1,0 +1,470 @@
+---
+description: AmL product-family app icon design, generation, integration, and QA contract
+alwaysApply: true
+---
+
+# AmL app icon family — one connected system
+
+This rule applies to every AmL application icon, launcher icon, product logo,
+splash mark, and in-app brand mark. It covers MessageMe, OneBrowser, OneAuth,
+AmL Secure Keyboard, AmL Launcher, and any future AmL product.
+
+The family must be recognizable before the product names are visible. Products
+may have different colors and symbols, but they must share one construction
+system, material, lighting model, optical scale, and light/dark behavior.
+
+## Source of truth
+
+- Approved standalone source artwork:
+  `scripts/assets/app-icon-family/<product>.png` (light)
+  `scripts/assets/app-icon-family/<product>-dark.png` (dark)
+- **App Builder exception:** its user-approved product source, logo, icon
+  masters, and flap animation live together in the sibling checkout at
+  `aiapp_builder2/brand/app-builder/`. The files under
+  `scripts/assets/app-icon-family/aiapp-builder*.png` and
+  `design/app-icons/aiapp-builder/` are compatibility mirrors only.
+- Generator and platform propagator: `scripts/generate-app-icon-family.py`
+- Never synthesize dark masters by posterizing/thresholding the light PNG —
+  that creates an 8-bit look. Dark masters are approved standalone artwork.
+- Production masters: `design/app-icons/<product>/`
+- Every product has:
+  - `app_icon_light.png` — 1024×1024 RGBA light master
+  - `app_icon_dark.png` — 1024×1024 RGBA dark master
+  - `app_icon_light_foreground.png` — transparent adaptive foreground
+  - `app_icon_dark_foreground.png` — transparent dark foreground
+- Concept boards in `docs/aml-icon-family-*.png` are presentation references
+  only. Never crop a board to make a production icon.
+- The approved standalone sources reproduce that board's actual artwork. Do
+  not replace them with a new procedural interpretation or a newly generated
+  proposal unless the user explicitly approves a redesign.
+- Generated platform assets are derivatives. Never edit a generated density,
+  `.ico`, AppIcon size, or launcher PNG as the design source.
+
+## Non-negotiable visual DNA
+
+### Shared canvas
+
+- Master canvas is exactly 1024×1024.
+- Outer tile is one **Lamé superellipse / squircle** (continuous curvature, no flat mid-sides).
+- Generator must use `superellipse_mask` — never Pillow `rounded_rectangle` for the outer tile.
+- Approved-board exponent `n = 4.0`, tile inset ≈ 3.5% of canvas (see `TILE_N` / `TILE_INSET` in the generator).
+- Keep important foreground detail inside the central Android adaptive-icon
+  safe zone. Never place an essential terminal, node, or arrow at the edge.
+- All family members must look equal in perceived size when placed in one row.
+  Do not scale a sparse symbol larger merely because there is empty space.
+
+### Shared geometry
+
+- Construct symbols from circles, rounded rectangles, connected arcs, rounded
+  terminals, protected centers, and deliberate negative space.
+- Prefer one continuous visual idea over several literal illustrations.
+- Use a maximum of two metaphors in one icon.
+- Primary strokes must share the same optical weight across the family.
+- Terminals are round unless a product meaning requires a deliberate point,
+  such as Launcher’s upward arrow.
+- Product glyphs must remain identifiable at 32 px and recognizable at 16 px.
+- Avoid thin decorative lines that disappear after launcher rasterization.
+
+### Shared material and light
+
+- The tile uses restrained diagonal color movement from upper-left to
+  lower-right.
+- Lighting always comes from the upper-left.
+- Use a crisp translucent edge, one broad restrained top highlight, and a soft
+  depth shadow. The system is “pastel glass,” not glossy plastic or neon.
+- Foreground glyphs use a pearl white-to-lilac material with enough contrast
+  against both light and dark tiles.
+- Dark variants deepen the tile; they do not invert, redraw, rotate, or replace
+  the product symbol.
+- Shadows must remain hue-matched and controlled. No black muddy halo, large
+  bloom, fake chrome, excessive bevel, or generic purple-blue AI glow.
+- Do not introduce texture, noise, tiny reflections, text, letters, or numbers
+  unless the product concept explicitly requires them.
+
+## Product symbols and palettes
+
+### MessageMe — `messageme`
+
+- Core mark: the established round speech bubble with a lower-left tail.
+- It is the origin mark for the family’s soft circular language.
+- Never replace it with chat dots, quotation marks, a paper plane, or a generic
+  rectangular message balloon.
+- Light palette: sky blue → violet → soft orchid, with a slightly lighter upper-left.
+- Dark palette: cobalt/navy → deep violet → plum.
+
+### OneBrowser — `onebrowser`
+
+- Core mark: a globe/portal built from circular longitude/latitude arcs, held
+  by one open orbital path.
+- The opening communicates discovery and forward movement.
+- Keep the globe abstract and calm. Do not use a copied browser swirl, Chrome-
+  style segments, a compass needle, or a literal cursor arrow.
+- Light palette: pale sky blue → clear aqua → deeper cyan-turquoise, fitted to
+  tile 02 of the approved board: `(197, 231, 249) → (146, 209, 227) →
+  (82, 199, 213)`. Blue leads green at every stop.
+- This palette was previously written as "cyan → clear aqua → mint". That
+  wording was read as a green-ended ramp and shipped a tile that did not match
+  the board. **OneBrowser's tile must not resolve into mint or any green-
+  dominant colour.** Where prose and the board disagree, the board wins; where
+  the board and a remembered palette disagree, re-fit from the board with
+  `scripts/fit-board-tile-palette.py` rather than adjusting by eye.
+- Dark palette: deep cyan/teal → ocean navy,
+  `(1, 142, 162) → (0, 48, 80) → (2, 27, 116)`. Already green-free and running
+  light-to-deep along the same diagonal, so it stays as-is.
+
+### OneAuth — `oneauth`
+
+- Core mark: protected shield, keyhole shaped around the numeral-one idea, and
+  a restrained four-node trust orbit.
+- Preserve the recognizable shield/orbit relationship from the original
+  OneAuth identity while simplifying small details.
+- Never use a padlock alone, fingerprint, checkmark badge, or generic shield.
+- Light palette: blush pink → violet → clear blue, with mint node accents.
+- Dark palette: mulberry → deep violet → security blue.
+
+### AmL Secure Keyboard — `secure-keyboard`
+
+- Core mark: compact rounded key grid/input surface built from family modules.
+- One coral key may act as the memorable product accent.
+- Keep the number of keys low enough to read at launcher size.
+- Do not draw a realistic keyboard, individual letters, a spacebar label, or a
+  phone keyboard screenshot.
+- Light palette: periwinkle → indigo → clear blue, with restrained coral.
+- Dark palette: deep indigo → midnight blue, with the same coral accent.
+
+### AmL Launcher — `launcher`
+
+- Core mark: home/starting-place arch combined with a centered upward launch
+  path and a restrained horizon/orbit arc.
+- The arrow means “begin from here,” not speed or rocketry.
+- Do not use a rocket, app-grid dots alone, Android robot, or copied home icon.
+- Light palette: amber/peach → coral → rose.
+- Dark palette: warm umber → burgundy → deep rose.
+
+### AI App Builder — `aiapp-builder`
+
+- Core mark: a low-poly cyan / royal-blue / mint hummingbird in flight (facing
+  right), expressing speed and craft. Same AmL glass tile as the rest of the
+  family; tile silhouette matches MessageMe / OneAuth.
+- Never replace it with a robot, wand, generic sparkle, code brackets,
+  lightning bolt, or the retired window-and-blocks pictogram.
+- Light palette: pale mint → clear aqua/cyan → soft periwinkle-violet.
+- Dark palette: deep teal/navy → cyan-blue → deep indigo-violet.
+- Default **built-app** template (`aiapp-built-app.png`): sand glass tile +
+  pearl hummingbird (approved `pearl-bird-center-sand`) so new apps do not
+  clone the App Builder product launcher.
+
+### AmL One — `aml-one`
+
+- Core mark: a pearl shopping bag with a brown/taupe handle and a colored
+  OneAuth family icon peeking out of the top. It reads as “get apps here.”
+- Construction matches MessageMe: one opaque plate, a thin rim, one upper-left
+  highlight, and an opaque pearl bag. Never a nested circular glass ring,
+  ribbed crystal bezel, or frosted lock-in-a-bubble. The bag body is a rounded
+  rectangle, not a round blob.
+- Never replace it with a four-node ring, a padlock, a storefront copied from
+  App Builder’s window, a holiday gift box, or a shopping cart.
+- Light palette: sand → terracotta → brick-copper,
+  `(244, 196, 160) → (217, 107, 69) → (166, 59, 42)`.
+- Dark palette: umber → brick → cocoa,
+  `(122, 58, 40) → (92, 34, 24) → (42, 18, 14)`.
+
+### Gallery — `gallery`
+
+- Core mark: a Photos landscape — two overlapping triangles with rounded
+  tops and a yellow sun — on the family glass tile. It means “pictures,”
+  not a stacked frame or a camera body.
+- The farther peak is a duskier gray pearl so the nearer white slope reads
+  in front. Both use the same embossed pearl material as Launcher / OneAuth
+  — raised clay, not flat triangles.
+- The sun is the yellow accent with the same top-left highlight.
+- Never replace it with a camera, a polaroid stack, film sprockets, or a
+  copied iOS Photos plate without the AmL glass tile.
+- Light palette: golden sand → honey → AmL One-adjacent orange,
+  `(250, 236, 186) → (244, 176, 96) → (228, 108, 48)`. Sits between App
+  Builder’s sand-gold tile and the store’s brick-orange; no photo-blue.
+- Dark palette: deep amber → burnt orange → cocoa.
+- Accent: sun yellow `(255, 224, 72)`.
+
+### OneDrop — `onedrop`
+
+- Core mark: a single pearl teardrop on the family glass tile. It means
+  “send nearby,” not a rain cloud or a generic water drop clipart.
+- Same emboss as Launcher / OneAuth: pearl fill, upper-left highlight,
+  hue-matched shadow. Never a flat pale-sky plate.
+- Light palette: OneMail aqua-sky-periwinkle, a hair lighter than the first dark-blue draft,
+  `(101, 204, 212) → (101, 166, 228) → (132, 145, 230)`.
+- Dark palette: deep cobalt → navy,
+  `(8, 62, 108) → (14, 48, 118) → (32, 38, 112)`.
+
+### Remote Keyboard — `remote-keyboard`
+
+- Core mark: the laptop trackpad from the in-app SVG — pearl plate plus two
+  mouse buttons, gaps open to the glass. It means “drive the computer,” not
+  Secure Keyboard’s key grid and not a pointer cursor.
+- Same emboss as OneDrop / Launcher: pearl fill, upper-left highlight,
+  hue-matched shadow. Never a flat outline drawing of the SVG.
+- Light palette: sky → periwinkle,
+  `(176, 214, 248) → (118, 154, 236) → (92, 108, 228)`.
+- Dark palette: deep cobalt → midnight,
+  `(22, 48, 96) → (20, 32, 78) → (16, 22, 58)`.
+
+## Light and dark behavior
+
+### Launcher, dock, taskbar, Start menu, and install package
+
+- Always use the LIGHT production master as the canonical full-color
+  application/launcher icon on every platform.
+- This is intentional even when the operating system or application is dark.
+- Android may apply its user-controlled themed/monochrome treatment; provide a
+  safe foreground when the platform pipeline supports it, but never replace
+  the canonical light full-color source with the dark master.
+- Do not programmatically swap Android launcher activities to follow app
+  theme. Launchers cache icons and the behavior is inconsistent.
+- Do not use iOS alternate-icon APIs merely to follow the app’s theme.
+- Platform-generated assets must always trace back to `app_icon_light.png`.
+
+### Inside an application
+
+- Existing in-app brand marks select the asset from the effective Flutter,
+  Compose, Qt, or platform theme:
+  - light theme → `app_icon_light.png`
+  - dark theme → `app_icon_dark.png`
+- Theme selection must be reactive and local; do not poll theme state.
+- Use the platform’s current theme environment (`Theme.of(context).brightness`,
+  Compose `isSystemInDarkTheme`/app theme state, or the equivalent).
+- If an app currently has no in-app product icon, do not add a decorative logo
+  solely to exercise the dark asset.
+- Do not change navigation, page hierarchy, splash timing, or layout merely to
+  add brand art.
+- Preserve user-selectable alternate identities. Only the matching AOW
+  identity receives light/dark variants; unrelated alternate icons remain
+  unchanged.
+
+## Platform integration requirements
+
+### Flutter products
+
+- Keep both masters in the declared Flutter asset bundle when the icon appears
+  inside the app.
+- Point `flutter_launcher_icons.image_path` and every non-Android platform
+  launcher path to the LIGHT source or the compatibility alias that is a
+  byte-for-byte copy of the light source. iOS, macOS, Windows, and Ubuntu
+  Touch consume that same transparent PNG — not an extracted foreground.
+- Android home-screen mipmaps use `image_path_android` pointing at an opaque
+  full-bleed plate (`app_icon_launcher.png`) derived from the light master.
+  HyperOS paints transparent corner padding white. Do not restore adaptive
+  fg/bg layers. Delete `mipmap-anydpi-v26` launcher XML.
+- Keep the existing iOS alpha-removal policy and platform icon-size settings.
+- Regenerate launcher outputs with `dart run flutter_launcher_icons` from the
+  product’s Flutter root after changing the master, then rewrite Windows
+  `.ico` with `scripts/write-windows-ico.py` (full 16–256 px ladder).
+- Linux/Ubuntu Touch installers and `.desktop` files must install the light
+  master. Windows `.ico` and macOS AppIcon outputs also derive from light.
+
+### Native Android products
+
+- Legacy icons: provide density-correct `mipmap-*dpi/ic_launcher.png` files
+  from an opaque full-bleed plate of the light master (not a foreground, not
+  the transparent-corner website PNG).
+- Do not ship adaptive launcher XML. Delete `mipmap-anydpi-v26/ic_launcher.xml`
+  so the density PNGs win on API 26+.
+- Manifest `android:icon` and `android:roundIcon` must reference the launcher
+  resource, never the dark in-app asset.
+- Store the dark master as an in-app drawable only when an existing settings,
+  About, or branded surface uses it.
+- Keep foreground artwork inside adaptive safe bounds and test circle,
+  squircle, rounded-square, and OEM masks.
+
+### Windows
+
+- The canonical executable/package icon is generated from the light master.
+- Preserve transparency and verify 16, 24, 32, 48, 64, 128, and 256 px frames.
+- A packaged Windows app may additionally provide OS theme-qualified assets,
+  but this does not change the family rule: the app’s canonical full-color
+  identity remains the light master.
+
+### Apple platforms
+
+- The canonical icon is generated from the light master.
+- If a future task adds Apple appearance variants, use the family dark master
+  for the Dark appearance and derive Mono/Tinted assets from the same glyph.
+- Apple appearance follows the user’s Home Screen choice, not the app’s
+  internal theme. Do not conflate those settings.
+
+### Linux and Ubuntu Touch
+
+- Install the light master as the standard colorful app icon.
+- A symbolic monochrome icon may be added for shell/high-contrast integration,
+  but it must reuse the same silhouette and may not become a sixth logo.
+- Do not assume every desktop supports automatic light/dark colorful icons.
+
+## Future app recipe — same exact family look
+
+Human-readable twin of this section: `docs/app-icon-family.md`.
+Agents must follow this recipe; do not invent a parallel icon pipeline.
+
+Production icons are **approved standalone PNG masters**, not a procedural
+reinterpretation. The generator **loads and propagates** those masters. The
+old `render()` / `*_glyph()` helpers in the generator are DNA reference only —
+never ship them as a substitute for approved artwork.
+
+### Spec every master must meet
+
+| Spec | Value |
+|------|--------|
+| Canvas | Exactly **1024×1024** |
+| Format | **RGBA** PNG, transparent outside the tile |
+| Outer tile | Lamé superellipse `n = 4.0`, inset ≈ **3.5%** (`TILE_N` / `TILE_INSET`) |
+| Material | Pastel glass tile + pearl glyph; upper-left light |
+| Symbol | One (max two) family metaphors; readable at 32 px / 16 px |
+| Light vs dark | Same glyph geometry; dark only deepens the tile |
+| Pair required | Both `<slug>.png` and `<slug>-dark.png` — no exceptions |
+
+### Step-by-step (new product)
+
+1. **Name the slug** — lowercase kebab or compound used everywhere
+   (e.g. `onebrowser`, `secure-keyboard`). File stems must match.
+
+2. **Define the mark** — one primary action / emotional promise; one reduced
+   symbol from family primitives (circles, arcs, rounded terminals, protected
+   center). Check it does **not** silhouette-collide with MessageMe bubble,
+   OneBrowser globe, OneAuth shield, Keyboard grid, Launcher arch+arrow, Mail
+   envelope, App Builder window+blocks, AmL One shopping bag, or Gallery
+   sun-and-peaks landscape.
+
+3. **Pick palettes** — three-stop light diagonal + deeper three-stop dark.
+   Place the new light and dark tiles in a row with the existing five; if it
+   looks like a different brand system, redo the palette.
+
+4. **Create the LIGHT master first**
+   - Work from existing approved lights as visual references:
+     `scripts/assets/app-icon-family/*.png` (not `*-dark.png`) and
+     `docs/icons/production-family-light.png`.
+   - Output a **standalone** 1024 icon (product mark only — no board, no
+     labels, no mockup chrome).
+   - Match tile shape, inset, glass rim, pearl material, shadow softness, and
+     optical glyph scale of the existing lights.
+   - **Never crop** a concept board into the master.
+
+5. **Create the DARK master as a companion of that light**
+   - Use the **approved light PNG as the image reference**.
+   - Same symbol, proportions, nodes, and optical scale — only deepen the tile
+     (see product dark palettes above for the family language).
+   - Explicitly demand: smooth continuous gradients, soft anti-aliased curves,
+     no banding, no posterization, no jagged/8-bit edges, no hard thresholds.
+   - **Forbidden:** deriving dark by thresholding, posterizing, or hard-masking
+     the light PNG. That is what produced the 8-bit dark icons.
+
+6. **Normalize into the source-of-truth folder**
+   - Save:
+     - `scripts/assets/app-icon-family/<slug>.png`
+     - `scripts/assets/app-icon-family/<slug>-dark.png`
+   - Ensure RGBA + transparent corners (apply `superellipse_mask` from the
+     generator if the art tool left an opaque plate or wrong corner radius).
+   - Do not leave RGB-only files or black plates outside the tile.
+
+7. **Wire the generator**
+   - Add a `Product(...)` row to `PRODUCTS` in
+     `scripts/generate-app-icon-family.py` (slug, light RGB stops, dark RGB
+     stops, accent, glyph callback — glyph may be a no-op stub if unused by
+     `main()`, but the `Product` entry must exist).
+   - Extend `main()` copy destinations for the new app (Flutter assets,
+     Android mipmaps/drawables, etc.) the same way existing products are wired.
+   - Document every output path in `docs/app-icon-family.md` under the new
+     product.
+
+8. **Propagate**
+
+```powershell
+python .\scripts\generate-app-icon-family.py `
+  --one-browser-root C:\Users\ambru\source\repos\aml-systems\one_browser
+```
+
+   Then run each affected product’s platform icon tool (e.g.
+   `dart run flutter_launcher_icons` from that app’s Flutter root). Launcher
+   pipelines must point at the **light** master only.
+
+9. **QA before merge**
+   - Open `docs/icons/production-family-light.png` and
+     `docs/icons/production-family-dark.png`.
+   - New icon must match tile, rim, lighting, pearl weight, and perceived size
+     next to the others at 1024 / 128 / 48 / 32 / 16.
+   - Confirm dark is not crunchier than light (no stair-step curves, no
+     posterized tile).
+   - Confirm launcher/package still uses light; in-app theme swap uses dark
+     only where branding already existed.
+   - `graphify update .` in every modified repo; product changelog entry.
+
+10. **User approval** — do not replace an approved family look with a new AI
+    proposal unless the user explicitly asks for a redesign.
+
+### AI / image-gen prompt checklist (match existing look)
+
+When generating masters, always attach **existing approved family icons** as
+references (prefer a light row + the product’s light when making dark).
+
+Require in the prompt:
+
+- Standalone 1024×1024 app icon, transparent outside the squircle
+- Same Lamé superellipse / continuous curvature as the references (not a
+  flatter iOS-style rounded square)
+- Pastel glass tile, pearl glyph, upper-left light, restrained hue-matched shadow
+- No text, no labels, no presentation board, no device mockup
+- For dark: “companion of this light icon — identical glyph geometry; deepen
+  tile only; smooth gradients; soft AA; no banding; no 8-bit / posterized look”
+
+Reject and regenerate if you see: hard-threshold edges, concentric banding on
+the tile, neon chrome, muddy black halos, or a different symbol than the light.
+
+## Generation command
+
+Requirements: Python 3.11+ and Pillow. If Pillow is unavailable, install it in
+the active development environment with `python -m pip install Pillow`; do not
+replace the approved-master pipeline with screenshots or ad-hoc exports.
+
+From the `messageme` repository root:
+
+```powershell
+python .\scripts\generate-app-icon-family.py `
+  --one-browser-root C:\Users\ambru\source\repos\aml-systems\one_browser
+```
+
+If OneBrowser is not checked out at the default path, pass its actual checkout.
+Do not silently skip OneBrowser when the task claims to update the full family.
+
+After generation, run each product’s established launcher-icon generator. The
+family generator creates masters and native density assets; it does not replace
+Flutter’s platform-specific AppIcon/ICO generation.
+
+## Mandatory visual QA
+
+- Place all five light icons in one row and all five dark icons in another.
+- Confirm identical tile size, corner radius, inset, highlight position, glyph
+  material, and perceived scale.
+- Verify each symbol without labels at 32 px.
+- Verify no essential part is clipped by Android circle and squircle masks.
+- Verify transparent corners do not contain accidental black pixels.
+- Verify the light master is used by launcher/package outputs.
+- Switch each app between light and dark theme and check every existing in-app
+  brand surface without restarting the app.
+- Check high contrast and grayscale; silhouettes must remain distinct.
+- Never approve from the 1024 px master alone.
+
+## Hard rules
+
+1. Never crop presentation boards into production assets.
+2. Never hand-edit generated platform sizes as the source of truth.
+3. Never use the dark master as the canonical launcher icon.
+4. Never create a theme-driven Android launcher alias swap.
+5. Never add a logo to screens that did not already contain branding.
+6. Never alter a product symbol between light and dark variants.
+7. Never introduce an isolated palette, corner radius, light direction, bevel,
+   or material for one product.
+8. Never ship a new family icon without small-size and adaptive-mask review.
+9. Never overwrite unrelated user changes while regenerating platform assets.
+10. Never synthesize dark masters by posterizing/thresholding the light PNG.
+11. Never replace approved `scripts/assets/app-icon-family/` masters with a
+    procedural `render()` reinterpretation unless the user asks for a redesign.
+12. After icon code or asset changes, run `graphify update .` in every modified
+    repository and include the appropriate product changelog entry.

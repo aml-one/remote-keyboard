@@ -1,0 +1,39 @@
+name: remotekeyboard
+description: "Remote Keyboard — wireless keyboard and mouse for your computer."
+publish_to: "none"
+version: 1.0.1+10001
+
+environment:
+  sdk: ^3.11.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  aml_ui:
+    path: ../../global-assets/packages/aml_ui
+  cupertino_icons: ^1.0.8
+  shared_preferences: ^2.5.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/app_icon.png"
+  image_path_android: "assets/icon/app_icon_launcher.png"
+  windows:
+    generate: false
+  macos:
+    generate: false
+  web:
+    generate: false
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon/
+    - assets/branding/ic_space_bird.png

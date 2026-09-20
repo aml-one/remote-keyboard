@@ -1,0 +1,49 @@
+---
+description: Maintain per-version changelog files after each completed task
+alwaysApply: true
+---
+
+# Changelog maintenance
+
+After completing any task that changes product behaviour, add one line to the
+**active changelog file** in the matching section.
+
+## Active file
+
+While repo root `version` is `X.Y.Z`, edit **only**:
+
+```
+changelog/changelog-v<NEXT>
+```
+
+where `<NEXT>` is the semver after one bump. So `version` = `1.0.0` means
+you edit `changelog/changelog-v1.0.1`, never `-v1.0.0`. After `1.0.9`
+the next file is `changelog-v1.1.0`, never `v1.0.10`.
+
+### Mandatory pre-flight
+
+1. Read repo root `version`. Never guess it from open tabs or recent files.
+2. Resolve the path:
+
+```powershell
+. scripts/changelog-lib.ps1; Get-ActiveChangelogPath
+```
+
+3. Edit only that path.
+
+## File layout
+
+```
+# vX.Y.Z
+
+## Features
+[feature] ...
+
+## Improvements
+[improvement] ...
+
+## Bug fixes
+[bugfix] ...
+```
+
+Types: `feature`, `bugfix`, `improvement`. English only.

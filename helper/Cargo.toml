@@ -1,0 +1,19 @@
+[package]
+name = "remote-keyboard-helper"
+version = "1.0.1"
+edition = "2021"
+description = "AmL Remote Keyboard desktop helper — BLE central that injects keys and mouse."
+
+[dependencies]
+btleplug = "0.11"
+enigo = { version = "0.3", default-features = false, features = ["x11rb"] }
+futures = "0.3"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync"] }
+uuid = "1"
+tray-icon = { version = "0.19", default-features = false }
+tao = "0.30"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

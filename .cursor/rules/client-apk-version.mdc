@@ -1,0 +1,10 @@
+---
+description: Never build or install a Remote Keyboard APK without real APP_VERSION dart-defines
+alwaysApply: true
+---
+
+# APK version discipline
+
+`app/lib/core/app_version.dart` reads `APP_VERSION` from `--dart-define`.
+A bare `flutter build apk` reports `1.0.0`. Always pass the repo `version` file
+through `scripts/build-android.ps1`.
