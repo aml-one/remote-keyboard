@@ -5,10 +5,12 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Sender};
+use std::sync::OnceLock;
 use std::time::Duration;
 
 use btleplug::api::{
-    Central, CentralEvent, Manager as _, Peripheral as _, PeripheralProperties, ScanFilter,
+    Central, CentralEvent, Characteristic, Manager as _, Peripheral as _, PeripheralProperties,
+    ScanFilter,
 };
 use btleplug::platform::{Adapter, Manager, PeripheralId};
 use enigo::{Axis, Button, Coordinate, Direction, Enigo, Keyboard, Mouse, Settings};
@@ -121,6 +123,15 @@ const KEYBOARD: Uuid = Uuid::from_u128(0x8f7a0002_4c6f_4d2e_9a11_7c6ff0000001);
 const MOUSE: Uuid = Uuid::from_u128(0x8f7a0003_4c6f_4d2e_9a11_7c6ff0000001);
 
 static CONNECTED: AtomicBool = AtomicBool::new(false);
+static INJECTOR: OnceLock<Sender<InjectCmd>> = OnceLock::new();
+
+const HEARTBEAT: Duration = Duration::from_secs(8);
+const RECONNECT_TRIES: u32 = 40;
+const RECONNECT_WAIT: Duration = Duration::from_millis(150);
+
+fn injector() -> Sender<InjectCmd> {
+    INJECTOR.get_or_init(spawn_injector).clone()
+}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Remote Keyboard helper");
@@ -175,7 +186,11 @@ async fn run_once() -> Result<(), Box<dyn std::error::Error>> {
         .into_iter()
         .next()
         .ok_or("No Bluetooth adapter")?;
-    find_and_serve(&adapter).await
+    let mut last = None;
+    loop {
+        CONNECTED.store(false, Ordering::Relaxed);
+        find_and_serve(&adapter, &mut last).await?;
+    }
 }
 
 /// Phone advertises as `AOW Keyboard`. Older helpers only matched
@@ -195,66 +210,169 @@ fn looks_like_phone(props: &PeripheralProperties) -> bool {
     advertised_name_matches(props.local_name.as_deref().unwrap_or(""))
 }
 
-async fn find_and_serve(adapter: &Adapter) -> Result<(), Box<dyn std::error::Error>> {
-    // Subscribe before scanning so Windows DeviceDiscovered is not missed.
-    let mut events = adapter.events().await?;
-    adapter.start_scan(ScanFilter::default()).await?;
-    let mut ticker = tokio::time::interval(Duration::from_secs(1));
+async fn find_and_serve(
+    adapter: &Adapter,
+    last: &mut Option<PeripheralId>,
+) -> Result<(), Box<dyn std::error::Error>> {
     loop {
-        tokio::select! {
-            Some(event) = events.next() => {
-                let id = match event {
-                    CentralEvent::DeviceDiscovered(id) | CentralEvent::DeviceUpdated(id) => id,
-                    _ => continue,
-                };
-                if try_serve_id(adapter, &id).await? {
-                    return Ok(());
+        if let Some(id) = last.clone() {
+            if let Ok(peripheral) = adapter.peripheral(&id).await {
+                adapter.stop_scan().await.ok();
+                let _ = serve_peripheral(peripheral).await;
+            } else {
+                *last = None;
+            }
+        }
+        // Subscribe before scanning so Windows DeviceDiscovered is not missed.
+        let mut events = adapter.events().await?;
+        adapter.start_scan(ScanFilter::default()).await?;
+        let mut ticker = tokio::time::interval(Duration::from_secs(1));
+        let found = loop {
+            tokio::select! {
+                Some(event) = events.next() => {
+                    let id = match event {
+                        CentralEvent::DeviceDiscovered(id) | CentralEvent::DeviceUpdated(id) => id,
+                        _ => continue,
+                    };
+                    if let Some(peripheral) = take_phone(adapter, &id).await? {
+                        break Some(peripheral);
+                    }
+                }
+                _ = ticker.tick() => {
+                    if let Some(peripheral) = poll_phones(adapter).await? {
+                        break Some(peripheral);
+                    }
                 }
             }
-            _ = ticker.tick() => {
-                for peripheral in adapter.peripherals().await? {
-                    let Some(props) = peripheral.properties().await? else {
-                        continue;
-                    };
-                    if !looks_like_phone(&props) {
-                        continue;
-                    }
-                    let name = props.local_name.unwrap_or_else(|| "AOW Keyboard".into());
-                    println!("Found {name}");
-                    adapter.stop_scan().await.ok();
-                    serve_peripheral(peripheral).await?;
+        };
+        let Some(peripheral) = found else {
+            continue;
+        };
+        adapter.stop_scan().await.ok();
+        *last = Some(peripheral.id());
+        let _ = serve_peripheral(peripheral).await;
+    }
+}
+
+async fn take_phone(
+    adapter: &Adapter,
+    id: &PeripheralId,
+) -> Result<Option<btleplug::platform::Peripheral>, Box<dyn std::error::Error>> {
+    let Ok(peripheral) = adapter.peripheral(id).await else {
+        return Ok(None);
+    };
+    let Some(props) = peripheral.properties().await? else {
+        return Ok(None);
+    };
+    if !looks_like_phone(&props) {
+        return Ok(None);
+    }
+    let name = props.local_name.unwrap_or_else(|| "AOW Keyboard".into());
+    println!("Found {name}");
+    Ok(Some(peripheral))
+}
+
+async fn poll_phones(
+    adapter: &Adapter,
+) -> Result<Option<btleplug::platform::Peripheral>, Box<dyn std::error::Error>> {
+    for peripheral in adapter.peripherals().await? {
+        let Some(props) = peripheral.properties().await? else {
+            continue;
+        };
+        if !looks_like_phone(&props) {
+            continue;
+        }
+        let name = props.local_name.unwrap_or_else(|| "AOW Keyboard".into());
+        println!("Found {name}");
+        return Ok(Some(peripheral));
+    }
+    Ok(None)
+}
+
+async fn serve_peripheral(
+    peripheral: btleplug::platform::Peripheral,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let injector = injector();
+    let mut misses = 0u32;
+    let mut ever = false;
+    loop {
+        match serve_session(&peripheral, &injector).await {
+            Ok(()) => {
+                ever = true;
+                misses = 0;
+                CONNECTED.store(false, Ordering::Relaxed);
+                println!("helper: phone dropped, reconnecting…");
+            }
+            Err(error) => {
+                misses += 1;
+                CONNECTED.store(false, Ordering::Relaxed);
+                eprintln!("helper: {error}");
+            }
+        }
+        let budget = if ever { RECONNECT_TRIES } else { 8 };
+        if misses >= budget {
+            let _ = peripheral.disconnect().await;
+            return Ok(());
+        }
+        tokio::time::sleep(RECONNECT_WAIT).await;
+    }
+}
+
+async fn serve_session(
+    peripheral: &btleplug::platform::Peripheral,
+    injector: &Sender<InjectCmd>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if !peripheral.is_connected().await.unwrap_or(false) {
+        peripheral.connect().await?;
+    }
+    let chars = discover_input_chars(peripheral).await?;
+    let mut notifications = peripheral.notifications().await?;
+    for characteristic in &chars {
+        let _ = peripheral.unsubscribe(characteristic).await;
+        peripheral.subscribe(characteristic).await?;
+    }
+    let was = CONNECTED.swap(true, Ordering::Relaxed);
+    if was {
+        println!("Reconnected. Injecting keys and mouse.");
+    } else {
+        println!("Connected. Injecting keys and mouse.");
+    }
+    let keyboard = chars.iter().find(|c| c.uuid == KEYBOARD).cloned();
+    let mut beat = tokio::time::interval(HEARTBEAT);
+    beat.tick().await;
+    loop {
+        tokio::select! {
+            note = notifications.next() => {
+                let Some(note) = note else {
+                    let _ = peripheral.disconnect().await;
                     return Ok(());
+                };
+                let cmd = if note.uuid == KEYBOARD {
+                    InjectCmd::Keyboard(note.value)
+                } else if note.uuid == MOUSE {
+                    InjectCmd::Mouse(note.value)
+                } else {
+                    continue;
+                };
+                if injector.send(cmd).is_err() {
+                    return Err("injector thread stopped".into());
+                }
+            }
+            _ = beat.tick() => {
+                if !peripheral.is_connected().await.unwrap_or(false) {
+                    return Ok(());
+                }
+                if let Some(ref characteristic) = keyboard {
+                    let _ = peripheral.read(characteristic).await;
                 }
             }
         }
     }
 }
 
-async fn try_serve_id(
-    adapter: &Adapter,
-    id: &PeripheralId,
-) -> Result<bool, Box<dyn std::error::Error>> {
-    let Ok(peripheral) = adapter.peripheral(id).await else {
-        return Ok(false);
-    };
-    let Some(props) = peripheral.properties().await? else {
-        return Ok(false);
-    };
-    if !looks_like_phone(&props) {
-        return Ok(false);
-    }
-    let name = props.local_name.unwrap_or_else(|| "AOW Keyboard".into());
-    println!("Found {name}");
-    adapter.stop_scan().await.ok();
-    serve_peripheral(peripheral).await?;
-    Ok(true)
-}
-
-async fn serve_peripheral(
-    peripheral: btleplug::platform::Peripheral,
-) -> Result<(), Box<dyn std::error::Error>> {
-    peripheral.connect().await?;
-    tokio::time::sleep(Duration::from_millis(400)).await;
+async fn discover_input_chars(
+    peripheral: &btleplug::platform::Peripheral,
+) -> Result<Vec<Characteristic>, Box<dyn std::error::Error>> {
     peripheral.discover_services().await?;
     let mut chars: Vec<_> = peripheral
         .characteristics()
@@ -262,7 +380,7 @@ async fn serve_peripheral(
         .filter(|c| c.uuid == KEYBOARD || c.uuid == MOUSE)
         .collect();
     if chars.is_empty() {
-        tokio::time::sleep(Duration::from_millis(700)).await;
+        tokio::time::sleep(Duration::from_millis(150)).await;
         peripheral.discover_services().await?;
         chars = peripheral
             .characteristics()
@@ -273,28 +391,7 @@ async fn serve_peripheral(
     if chars.is_empty() {
         return Err("Phone GATT has no keyboard/mouse characteristics yet".into());
     }
-    let mut notifications = peripheral.notifications().await?;
-    for characteristic in &chars {
-        println!("Subscribe {}", characteristic.uuid);
-        peripheral.subscribe(characteristic).await?;
-    }
-    CONNECTED.store(true, Ordering::Relaxed);
-    println!("Connected. Injecting keys and mouse.");
-    let injector = spawn_injector();
-    while let Some(note) = notifications.next().await {
-        let cmd = if note.uuid == KEYBOARD {
-            InjectCmd::Keyboard(note.value)
-        } else if note.uuid == MOUSE {
-            InjectCmd::Mouse(note.value)
-        } else {
-            continue;
-        };
-        if injector.send(cmd).is_err() {
-            break;
-        }
-    }
-    CONNECTED.store(false, Ordering::Relaxed);
-    Ok(())
+    Ok(chars)
 }
 
 fn inject_key(enigo: &mut Enigo, hid: u8, direction: Direction) {
@@ -399,6 +496,13 @@ mod tests {
         assert!(advertised_name_matches("Remote Keyboard"));
         assert!(!advertised_name_matches("AirPods"));
         assert!(!advertised_name_matches(""));
+    }
+
+    #[test]
+    fn fastest_does_not_wait_on_taps() {
+        // Mirrors Dart ResponseSpeed.fastest.fireAndForget.
+        assert!(HEARTBEAT >= Duration::from_secs(5));
+        assert!(RECONNECT_WAIT < Duration::from_millis(500));
     }
 
     #[test]

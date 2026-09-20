@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'package:remotekeyboard/core/prefs.dart';
 
 class RemoteStatus {
   const RemoteStatus({
@@ -75,6 +76,36 @@ class RemoteBridge {
 
   static Future<void> tapKey(int hid, {int modifiers = 0}) async {
     if (hid == 0) return;
+    final done = _tapNative(hid, modifiers);
+    if (_fireAndForgetTaps) {
+      unawaited(done);
+      return;
+    }
+    await done;
+  }
+
+  static bool get _fireAndForgetTaps {
+    try {
+      return RemotePrefs.speed.fireAndForget;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<void> _tapNative(int hid, int modifiers) async {
+    try {
+      await _methods.invokeMethod<void>('tapKey', {
+        'hid': hid,
+        'modifiers': modifiers,
+      });
+    } on MissingPluginException {
+      await _tapLegacy(hid, modifiers);
+    } on PlatformException {
+      await _tapLegacy(hid, modifiers);
+    }
+  }
+
+  static Future<void> _tapLegacy(int hid, int modifiers) async {
     await sendKeyboard(modifiers, [hid]);
     // Always all-keys-up. Leaving Win/Ctrl/Alt in the key-up report sticks
     // them on the host (Win+Q opens Search / Start).
@@ -87,10 +118,8 @@ class RemoteBridge {
   }
 
   /// One-shot chord such as Ctrl+C. Always releases modifiers afterward.
-  static Future<void> tapChord(int hid, {required int modifiers}) async {
-    if (hid == 0) return;
-    await sendKeyboard(modifiers, [hid]);
-    await sendKeyboard(0, const []);
+  static Future<void> tapChord(int hid, {required int modifiers}) {
+    return tapKey(hid, modifiers: modifiers);
   }
 
   static Future<void> tapSequence(List<int> keys, {int modifiers = 0}) async {

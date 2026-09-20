@@ -13,6 +13,9 @@ import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.os.ParcelUuid
 import java.util.UUID
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 
 class BleHidServer(private val context: Context) {
     var advertising: Boolean = false
@@ -28,6 +31,8 @@ class BleHidServer(private val context: Context) {
     private var mouseChar: BluetoothGattCharacteristic? = null
     private val centrals = LinkedHashSet<BluetoothDevice>()
     private val notifyEnabled = LinkedHashSet<BluetoothDevice>()
+    private val pulse = Executors.newSingleThreadScheduledExecutor()
+    private var pulseTask: ScheduledFuture<*>? = null
 
     private val adapter: BluetoothAdapter?
         get() = (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
@@ -40,6 +45,11 @@ class BleHidServer(private val context: Context) {
             if (device == null) return
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 centrals.add(device)
+                try {
+                    // Direct link, not autoConnect — Windows otherwise idle-drops.
+                    server?.connect(device, false)
+                } catch (_: Throwable) {
+                }
             } else {
                 centrals.remove(device)
                 notifyEnabled.remove(device)
@@ -64,7 +74,8 @@ class BleHidServer(private val context: Context) {
             offset: Int,
             characteristic: BluetoothGattCharacteristic?,
         ) {
-            server?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, characteristic?.value)
+            val value = characteristic?.value ?: ByteArray(0)
+            server?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value)
         }
 
         override fun onDescriptorReadRequest(
@@ -109,6 +120,7 @@ class BleHidServer(private val context: Context) {
         val service = BluetoothGattService(SERVICE, BluetoothGattService.SERVICE_TYPE_PRIMARY)
         keyboardChar = notifyChar(KEYBOARD)
         mouseChar = notifyChar(MOUSE)
+        keyboardChar?.value = HidReports.framedKeyboard(0, intArrayOf())
         service.addCharacteristic(keyboardChar)
         service.addCharacteristic(mouseChar)
         if (!gatt.addService(service)) {
@@ -116,12 +128,20 @@ class BleHidServer(private val context: Context) {
             return false
         }
         server = gatt
+        pulseTask?.cancel(false)
+        pulseTask = pulse.scheduleAtFixedRate({
+            if (!connected && advertising) {
+                NameBeacon.refresh()
+            }
+        }, 45, 45, TimeUnit.SECONDS)
         emit()
         return true
     }
 
     @SuppressLint("MissingPermission")
     fun stop() {
+        pulseTask?.cancel(false)
+        pulseTask = null
         NameBeacon.stop()
         try {
             server?.close()

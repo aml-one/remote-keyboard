@@ -41,6 +41,11 @@ class MainActivity : FlutterActivity() {
                     val keys = (call.argument<List<Int>>("keys") ?: emptyList()).toIntArray()
                     result.success(sendKeyboard(mods, keys))
                 }
+                "tapKey" -> {
+                    val hid = call.argument<Int>("hid") ?: 0
+                    val mods = call.argument<Int>("modifiers") ?: 0
+                    result.success(tapKey(mods, hid))
+                }
                 "sendMouse" -> {
                     val buttons = call.argument<Int>("buttons") ?: 0
                     val dx = call.argument<Int>("dx") ?: 0
@@ -119,6 +124,13 @@ class MainActivity : FlutterActivity() {
         val hidOk = hid.connected && hid.sendKeyboard(modifiers, keys)
         val bleOk = ble.connected && ble.sendKeyboard(modifiers, keys)
         return hidOk || bleOk
+    }
+
+    private fun tapKey(modifiers: Int, hid: Int): Boolean {
+        if (hid == 0) return sendKeyboard(0, intArrayOf())
+        val down = sendKeyboard(modifiers, intArrayOf(hid))
+        val up = sendKeyboard(0, intArrayOf())
+        return down || up
     }
 
     private fun sendMouse(buttons: Int, dx: Int, dy: Int, wheel: Int): Boolean {

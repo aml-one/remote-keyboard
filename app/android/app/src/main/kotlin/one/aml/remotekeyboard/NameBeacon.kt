@@ -38,6 +38,18 @@ internal object NameBeacon {
 
     private var pendingRetry = false
     private var helperScan: AdvertiseData? = null
+    private var lastPrimary: AdvertiseData? = null
+    private var lastScan: AdvertiseData? = null
+
+    /** Restart the beacon without closing the GATT server. */
+    fun refresh() {
+        executor.execute {
+            val adv = advertiser ?: return@execute
+            val data = lastPrimary ?: return@execute
+            stopUnsafe(adv)
+            startLegacy(adv, data, lastScan)
+        }
+    }
 
     fun startHelper(adapter: BluetoothAdapter, service: ParcelUuid) {
         helperScan = AdvertiseData.Builder().addServiceUuid(service).build()
@@ -51,6 +63,8 @@ internal object NameBeacon {
             advertiser = null
             pendingRetry = false
             helperScan = null
+            lastPrimary = null
+            lastScan = null
             if (adv != null) stopUnsafe(adv)
         }
     }
@@ -71,6 +85,8 @@ internal object NameBeacon {
             }
             stopUnsafe(adv)
             advertiser = adv
+            lastPrimary = primary
+            lastScan = scan
             pendingRetry = retryNameOnly
             Log.i(TAG, "helper advertise name=${BluetoothIdentity.NAME}")
             startLegacy(adv, primary, scan)
@@ -90,8 +106,9 @@ internal object NameBeacon {
 
     @SuppressLint("MissingPermission")
     private fun startLegacy(adv: BluetoothLeAdvertiser, data: AdvertiseData, scan: AdvertiseData?) {
+        // LOW_LATENCY is budgeted (~60s on HyperOS) and drops the helper.
         val settings = AdvertiseSettings.Builder()
-            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
+            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
             .setConnectable(true)
             .setTimeout(0)

@@ -1,6 +1,6 @@
 [package]
 name = "remote-keyboard-helper"
-version = "1.0.3"
+version = "1.0.4"
 edition = "2021"
 description = "AmL Remote Keyboard desktop helper — BLE central that injects keys and mouse."
 

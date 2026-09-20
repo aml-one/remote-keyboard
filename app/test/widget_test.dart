@@ -34,6 +34,12 @@ void main() {
     expect(page.rows[2][1].hid, Hid.z);
   });
 
+  test('fastest fire-and-forget taps, others wait', () {
+    expect(ResponseSpeed.fastest.fireAndForget, isTrue);
+    expect(ResponseSpeed.fast.fireAndForget, isFalse);
+    expect(ResponseSpeed.normal.fireAndForget, isFalse);
+  });
+
   test('every appearance has a palette', () {
     for (final appearance in KeyboardAppearance.values) {
       final p = paletteFor(appearance);

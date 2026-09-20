@@ -140,11 +140,10 @@ extension KeyboardSizeMetrics on KeyboardSize {
 }
 
 extension ResponseSpeedMetrics on ResponseSpeed {
-  Duration get tapDelay => switch (this) {
-    ResponseSpeed.normal => Duration.zero,
-    ResponseSpeed.fast => Duration.zero,
-    ResponseSpeed.fastest => Duration.zero,
-  };
+  Duration get tapDelay => Duration.zero;
+
+  /// Fastest does not wait for the platform tap to finish.
+  bool get fireAndForget => this == ResponseSpeed.fastest;
 }
 
 Color borderPaint(BorderColor color) => switch (color) {

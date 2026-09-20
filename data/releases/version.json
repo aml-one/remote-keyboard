@@ -1,77 +1,67 @@
 {
     "remoteKeyboardAndroid":  {
-                                  "version":  "1.0.3",
-                                  "buildNumber":  10003,
-                                  "label":  "v1.0.3-260920",
-                                  "file":  "remotekeyboard-android-arm64-v1.0.3-260920.apk",
+                                  "version":  "1.0.4",
+                                  "buildNumber":  10004,
+                                  "label":  "v1.0.4-260920",
+                                  "file":  "remotekeyboard-android-arm64-v1.0.4-260920.apk",
                                   "sizeBytes":  18796284,
-                                  "sha256":  "376e5b3868d24b6de305e58e4aa3ee967f1a6f5028e3a449b3e69471ddc4b85b",
-                                  "publishedAt":  "2026-09-20T18:15:15.6752472Z",
+                                  "sha256":  "250b2330924caa0660d417cc80e2acd6a251f472475238e0e6cd2a6ad9543f11",
+                                  "publishedAt":  "2026-09-20T18:39:53.0053118Z",
                                   "changelog":  [
-                                                    "[improvement] Helper window shows an AmL status card instead of a blank pane",
-                                                    "[improvement] Closing the helper hides it next to the clock instead of quitting",
-                                                    "[bugfix] Helper types AZERTY keys as the letters on the pad, matching Bluetooth HID",
-                                                    "[bugfix] Helper mouse and keystrokes feel snappier (hold keys, coalesce pointer moves)"
+                                                    "[bugfix] Helper stays connected — BLE no longer drops about every minute",
+                                                    "[bugfix] Fastest keystroke is a single native tap, so helper typing is snappy"
                                                 ]
                               },
     "remoteKeyboardWindows":  {
-                                  "version":  "1.0.3",
-                                  "buildNumber":  10003,
-                                  "label":  "v1.0.3-260920",
-                                  "file":  "remotekeyboard-windows-x64-v1.0.3-260920.zip",
-                                  "sizeBytes":  735057,
-                                  "sha256":  "d770136a6b9abd1580477411b3a4596083e8cc5ff32e2d3bcdc0720289fbbf5e",
-                                  "publishedAt":  "2026-09-20T18:15:15.6752472Z",
+                                  "version":  "1.0.4",
+                                  "buildNumber":  10004,
+                                  "label":  "v1.0.4-260920",
+                                  "file":  "remotekeyboard-windows-x64-v1.0.4-260920.zip",
+                                  "sizeBytes":  745359,
+                                  "sha256":  "31fd851096f6727c751a8e8ab3906f6fe9b223dd430e552393a7e2fec674dd5c",
+                                  "publishedAt":  "2026-09-20T18:39:53.0053118Z",
                                   "changelog":  [
-                                                    "[improvement] Helper window shows an AmL status card instead of a blank pane",
-                                                    "[improvement] Closing the helper hides it next to the clock instead of quitting",
-                                                    "[bugfix] Helper types AZERTY keys as the letters on the pad, matching Bluetooth HID",
-                                                    "[bugfix] Helper mouse and keystrokes feel snappier (hold keys, coalesce pointer moves)"
+                                                    "[bugfix] Helper stays connected — BLE no longer drops about every minute",
+                                                    "[bugfix] Fastest keystroke is a single native tap, so helper typing is snappy"
                                                 ]
                               },
     "remoteKeyboardLinux":  {
-                                "version":  "1.0.3",
-                                "buildNumber":  10003,
-                                "label":  "v1.0.3-260920",
-                                "file":  "remotekeyboard-linux-x64-v1.0.3-260920.zip",
-                                "sizeBytes":  1320824,
-                                "sha256":  "252dbd6af9978a29bf99f4f62f3e310c1b8c794a6475a8a320876f13f9e4441c",
-                                "publishedAt":  "2026-09-20T18:15:15.6752472Z",
+                                "version":  "1.0.4",
+                                "buildNumber":  10004,
+                                "label":  "v1.0.4-260920",
+                                "file":  "remotekeyboard-linux-x64-v1.0.4-260920.zip",
+                                "sizeBytes":  1328843,
+                                "sha256":  "e3249d288c0a93b7511913d49548decd1b2182a02bb797098abf7ca3ab7308d2",
+                                "publishedAt":  "2026-09-20T18:39:53.0053118Z",
                                 "changelog":  [
-                                                  "[improvement] Helper window shows an AmL status card instead of a blank pane",
-                                                  "[improvement] Closing the helper hides it next to the clock instead of quitting",
-                                                  "[bugfix] Helper types AZERTY keys as the letters on the pad, matching Bluetooth HID",
-                                                  "[bugfix] Helper mouse and keystrokes feel snappier (hold keys, coalesce pointer moves)"
+                                                  "[bugfix] Helper stays connected — BLE no longer drops about every minute",
+                                                  "[bugfix] Fastest keystroke is a single native tap, so helper typing is snappy"
                                               ]
                             },
     "remoteKeyboardMacos":  {
-                                "version":  "1.0.3",
-                                "buildNumber":  10003,
-                                "label":  "v1.0.3-260920",
-                                "file":  "remotekeyboard-macos-arm64-v1.0.3-260920.zip",
-                                "sizeBytes":  895704,
-                                "sha256":  "12d4c3d254653e0e2bf70caaacf07da75e7dee365cff1ad6f379f6570df3c716",
-                                "publishedAt":  "2026-09-20T18:15:15.6752472Z",
+                                "version":  "1.0.4",
+                                "buildNumber":  10004,
+                                "label":  "v1.0.4-260920",
+                                "file":  "remotekeyboard-macos-arm64-v1.0.4-260920.zip",
+                                "sizeBytes":  901138,
+                                "sha256":  "1adbef71ecf0a92b70ed3933c0c1c1101ac5e940cbf0cbce1f983c005cc3f9b4",
+                                "publishedAt":  "2026-09-20T18:39:53.0053118Z",
                                 "changelog":  [
-                                                  "[improvement] Helper window shows an AmL status card instead of a blank pane",
-                                                  "[improvement] Closing the helper hides it next to the clock instead of quitting",
-                                                  "[bugfix] Helper types AZERTY keys as the letters on the pad, matching Bluetooth HID",
-                                                  "[bugfix] Helper mouse and keystrokes feel snappier (hold keys, coalesce pointer moves)"
+                                                  "[bugfix] Helper stays connected — BLE no longer drops about every minute",
+                                                  "[bugfix] Fastest keystroke is a single native tap, so helper typing is snappy"
                                               ]
                             },
     "remoteKeyboardMacosIntel":  {
-                                     "version":  "1.0.3",
-                                     "buildNumber":  10003,
-                                     "label":  "v1.0.3-260920",
-                                     "file":  "remotekeyboard-macos-x64-v1.0.3-260920.zip",
-                                     "sizeBytes":  970282,
-                                     "sha256":  "67eb2494a58e7711f45bdb5bf52c0bb5521dd44f82dc7583432b126632759edc",
-                                     "publishedAt":  "2026-09-20T18:15:15.6752472Z",
+                                     "version":  "1.0.4",
+                                     "buildNumber":  10004,
+                                     "label":  "v1.0.4-260920",
+                                     "file":  "remotekeyboard-macos-x64-v1.0.4-260920.zip",
+                                     "sizeBytes":  975964,
+                                     "sha256":  "8b89fb68e63cbbf4c0df483bf098d6c43ef7cb20e0556a7532739db69fa090d7",
+                                     "publishedAt":  "2026-09-20T18:39:53.0053118Z",
                                      "changelog":  [
-                                                       "[improvement] Helper window shows an AmL status card instead of a blank pane",
-                                                       "[improvement] Closing the helper hides it next to the clock instead of quitting",
-                                                       "[bugfix] Helper types AZERTY keys as the letters on the pad, matching Bluetooth HID",
-                                                       "[bugfix] Helper mouse and keystrokes feel snappier (hold keys, coalesce pointer moves)"
+                                                       "[bugfix] Helper stays connected — BLE no longer drops about every minute",
+                                                       "[bugfix] Fastest keystroke is a single native tap, so helper typing is snappy"
                                                    ]
                                  }
 }
