@@ -28,6 +28,9 @@ enum BorderColor { gray, darkGray, white, black, pearl, mint, lightGray, light }
 
 enum HomeLayout { keyboard, mouse }
 
+/// User-picked path. Connect and reconnect never switch this on their own.
+enum ConnectionMode { hid, helper }
+
 class RemotePrefs {
   RemotePrefs._();
 
@@ -49,8 +52,8 @@ class RemotePrefs {
       KeyboardLayout.values.byName(p.getString('layout') ?? 'qwerty');
   static set layout(KeyboardLayout v) => p.setString('layout', v.name);
 
-  static KeyboardAppearance get appearance => KeyboardAppearance.values
-      .byName(p.getString('appearance') ?? 'graphite');
+  static KeyboardAppearance get appearance =>
+      KeyboardAppearance.values.byName(p.getString('appearance') ?? 'graphite');
   static set appearance(KeyboardAppearance v) =>
       p.setString('appearance', v.name);
 
@@ -106,14 +109,17 @@ class RemotePrefs {
   static bool get autoReconnect => p.getBool('autoReconnect') ?? true;
   static set autoReconnect(bool v) => p.setBool('autoReconnect', v);
 
-  /// Last started path: `hid` or `helper`.
-  static String get lastTransport {
-    final raw = p.getString('lastTransport');
-    return raw == 'helper' ? 'helper' : 'hid';
+  /// Settings choice: Bluetooth HID or the desktop helper.
+  /// Falls back to the old `lastTransport` key once.
+  static ConnectionMode get connectionMode {
+    final raw = p.getString('connectionMode') ?? p.getString('lastTransport');
+    return raw == ConnectionMode.helper.name
+        ? ConnectionMode.helper
+        : ConnectionMode.hid;
   }
 
-  static set lastTransport(String v) =>
-      p.setString('lastTransport', v == 'helper' ? 'helper' : 'hid');
+  static set connectionMode(ConnectionMode v) =>
+      p.setString('connectionMode', v.name);
 
   static T stepEnum<T extends Enum>(List<T> all, T current, int delta) {
     final n = all.length;
@@ -126,31 +132,31 @@ extension KeyboardSizeMetrics on KeyboardSize {
   static const _normalHeight = 42.0;
 
   double get keyHeight => switch (this) {
-        KeyboardSize.normal => _normalHeight,
-        KeyboardSize.larger => _normalHeight * 1.25,
-      };
+    KeyboardSize.normal => _normalHeight,
+    KeyboardSize.larger => _normalHeight * 1.25,
+  };
 
   bool get roundLetters => false;
 }
 
 extension ResponseSpeedMetrics on ResponseSpeed {
   Duration get tapDelay => switch (this) {
-        ResponseSpeed.normal => Duration.zero,
-        ResponseSpeed.fast => Duration.zero,
-        ResponseSpeed.fastest => Duration.zero,
-      };
+    ResponseSpeed.normal => Duration.zero,
+    ResponseSpeed.fast => Duration.zero,
+    ResponseSpeed.fastest => Duration.zero,
+  };
 }
 
 Color borderPaint(BorderColor color) => switch (color) {
-      BorderColor.gray => const Color(0xFF9E9EA3),
-      BorderColor.darkGray => const Color(0xFF636368),
-      BorderColor.white => Colors.white,
-      BorderColor.black => Colors.black,
-      BorderColor.pearl => const Color(0xFFEDE6F5),
-      BorderColor.mint => const Color(0xFF5CCBB4),
-      BorderColor.lightGray => const Color(0xFFD0D0D5),
-      BorderColor.light => const Color(0xFFE8E4F5),
-    };
+  BorderColor.gray => const Color(0xFF9E9EA3),
+  BorderColor.darkGray => const Color(0xFF636368),
+  BorderColor.white => Colors.white,
+  BorderColor.black => Colors.black,
+  BorderColor.pearl => const Color(0xFFEDE6F5),
+  BorderColor.mint => const Color(0xFF5CCBB4),
+  BorderColor.lightGray => const Color(0xFFD0D0D5),
+  BorderColor.light => const Color(0xFFE8E4F5),
+};
 
 /// Same stroke keys use: off, or the chosen color at 1px / 2px thick.
 BorderSide keyBorderSide() {

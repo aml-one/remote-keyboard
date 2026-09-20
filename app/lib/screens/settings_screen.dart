@@ -49,28 +49,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
+            _section(
+              'Connect with',
+              SettingsChoicePicker<ConnectionMode>(
+                selected: RemotePrefs.connectionMode,
+                onSelected: _pickConnection,
+                choices: const [
+                  SettingsChoice(
+                    value: ConnectionMode.hid,
+                    label: 'Bluetooth',
+                    icon: Icons.bluetooth_rounded,
+                  ),
+                  SettingsChoice(
+                    value: ConnectionMode.helper,
+                    label: 'Helper',
+                    icon: Icons.laptop_windows_rounded,
+                  ),
+                ],
+              ),
+            ),
             _panel(
               SettingsCard(
                 children: [
                   SettingsSwitchTile(
                     title: const Text('Reconnect on start'),
                     subtitle:
-                        'Connect to the last computer when the app opens',
+                        'Open the path you picked above when the app starts',
                     value: RemotePrefs.autoReconnect,
                     onChanged: (v) =>
                         setState(() => RemotePrefs.autoReconnect = v),
-                  ),
-                  SettingsNavTile(
-                    icon: Icons.laptop_windows_rounded,
-                    title: 'Connect with helper',
-                    subtitle:
-                        'For the computer helper app when Bluetooth HID is not available',
-                    onTap: () async {
-                      RemotePrefs.lastTransport = 'helper';
-                      await RemoteBridge.requestPermissions();
-                      await RemoteBridge.startBle();
-                      if (context.mounted) Navigator.of(context).pop();
-                    },
                   ),
                 ],
               ),
@@ -243,6 +250,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _pickConnection(ConnectionMode mode) async {
+    if (mode == RemotePrefs.connectionMode) return;
+    setState(() => RemotePrefs.connectionMode = mode);
+    await RemoteBridge.stop();
   }
 
   Widget _panel(Widget child) {

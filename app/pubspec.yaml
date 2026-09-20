@@ -1,7 +1,7 @@
 name: remotekeyboard
 description: "Remote Keyboard — wireless keyboard and mouse for your computer."
 publish_to: "none"
-version: 1.0.1+10001
+version: 1.0.2+10002
 
 environment:
   sdk: ^3.11.4

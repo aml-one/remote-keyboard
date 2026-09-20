@@ -79,6 +79,7 @@ class MainActivity : FlutterActivity() {
     private var pairingPin: String = ""
 
     private fun startHid(): Boolean {
+        ble.stop()
         PairingAssist.onPin = { pin ->
             pairingPin = pin
             emitStatus()
@@ -93,6 +94,9 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun startBle(): Boolean {
+        PairingAssist.stop(this)
+        pairingPin = ""
+        hid.stop()
         val ok = ble.start()
         if (ok) ConnectedService.start(this, "Waiting for helper")
         emitStatus()
@@ -154,7 +158,7 @@ class MainActivity : FlutterActivity() {
                     pairingPin = ""
                     "HID · ${hid.deviceName.ifBlank { "computer" }}"
                 }
-                ble.connected -> "Helper · ${ble.deviceName.ifBlank { "computer" }}"
+                ble.connected -> ble.deviceName.ifBlank { "computer" }
                 ble.advertising -> "Waiting for helper"
                 hid.available -> "Waiting for Bluetooth HID"
                 else -> "Remote Keyboard"

@@ -1706,7 +1706,7 @@ dependencies = [
 
 [[package]]
 name = "remote-keyboard-helper"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "btleplug",
  "enigo",

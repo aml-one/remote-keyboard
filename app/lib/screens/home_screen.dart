@@ -1,6 +1,7 @@
 import 'package:aml_ui/aml_ui.dart';
 import 'package:flutter/material.dart';
 
+import '../core/connect_intent.dart';
 import '../core/key_layout.dart';
 import '../core/landscape_fit.dart';
 import '../core/landscape_pad_grow.dart';
@@ -60,9 +61,6 @@ class _HomeScreenState extends State<HomeScreen> {
       });
       RemoteBridge.keepAwake(s.connected);
       if (becameConnected) {
-        if (s.transport == 'hid' || s.transport == 'helper') {
-          RemotePrefs.lastTransport = s.transport;
-        }
         RemoteBridge.sendIdle();
       }
     });
@@ -81,10 +79,14 @@ class _HomeScreenState extends State<HomeScreen> {
   String get _connectionLabel {
     if (_status.connected) {
       final name = _status.deviceName.isEmpty ? 'computer' : _status.deviceName;
-      return '${_status.transport == 'hid' ? 'HID' : 'Helper'} · $name';
+      if (_status.transport == 'helper') return name;
+      return 'HID · $name';
     }
-    if (_status.bleAdvertising) {
-      return 'Waiting for helper — open Remote Keyboard on the computer';
+    if (RemotePrefs.connectionMode == ConnectionMode.helper) {
+      if (_status.bleAdvertising) {
+        return 'Waiting for helper\nOpen the helper on this computer';
+      }
+      return 'Not connected';
     }
     if (_status.hidAvailable) {
       if (_status.pairingPin.isNotEmpty) {
@@ -96,14 +98,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _connectHid() async {
-    RemotePrefs.lastTransport = 'hid';
     await RemoteBridge.requestPermissions();
     final ok = await RemoteBridge.startHid();
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'This phone cannot act as a Bluetooth HID keyboard. Use helper pairing.',
+            'This phone cannot act as a Bluetooth keyboard. Pick Helper in Settings.',
           ),
         ),
       );
@@ -119,16 +120,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _connectHelper() async {
-    RemotePrefs.lastTransport = 'helper';
     await RemoteBridge.requestPermissions();
     await RemoteBridge.startBle();
+  }
+
+  Future<void> _connectFromPad() async {
+    if (padConnectUsesHelper(RemotePrefs.connectionMode)) {
+      await _connectHelper();
+      return;
+    }
+    await _connectHid();
   }
 
   Future<void> _maybeAutoReconnect() async {
     if (!RemotePrefs.autoReconnect) return;
     final current = await RemoteBridge.getStatus();
     if (!mounted || current.connected) return;
-    if (RemotePrefs.lastTransport == 'helper') {
+    if (RemotePrefs.connectionMode == ConnectionMode.helper) {
       if (current.bleAdvertising) return;
       await RemoteBridge.requestPermissions();
       if (!mounted) return;
@@ -292,10 +300,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onPressed: RemoteBridge.stop,
       );
     }
-    return _chromeTextBtn(
-      label: 'Connect',
-      onPressed: _status.hidSupported ? _connectHid : _connectHelper,
-    );
+    return _chromeTextBtn(label: 'Connect', onPressed: _connectFromPad);
   }
 
   Widget _layoutToggleBtn() {
@@ -321,21 +326,25 @@ class _HomeScreenState extends State<HomeScreen> {
             left: 0,
             right: 0,
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                IgnorePointer(child: _connectionDot()),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: IgnorePointer(child: _connectionDot()),
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: IgnorePointer(
                     child: Text(
                       _connectionLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      softWrap: true,
+                      maxLines: 3,
+                      overflow: TextOverflow.visible,
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         color: p.foreground,
                         fontSize: 13,
-                        height: 1.1,
+                        height: 1.25,
                       ),
                     ),
                   ),

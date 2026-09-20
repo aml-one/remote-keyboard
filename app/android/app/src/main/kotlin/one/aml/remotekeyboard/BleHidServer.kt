@@ -27,6 +27,7 @@ class BleHidServer(private val context: Context) {
     private var keyboardChar: BluetoothGattCharacteristic? = null
     private var mouseChar: BluetoothGattCharacteristic? = null
     private val centrals = LinkedHashSet<BluetoothDevice>()
+    private val notifyEnabled = LinkedHashSet<BluetoothDevice>()
 
     private val adapter: BluetoothAdapter?
         get() = (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
@@ -41,9 +42,19 @@ class BleHidServer(private val context: Context) {
                 centrals.add(device)
             } else {
                 centrals.remove(device)
+                notifyEnabled.remove(device)
             }
             connected = centrals.isNotEmpty()
             deviceName = if (connected) safeName(centrals.first()) else ""
+            emit()
+        }
+
+        override fun onServiceAdded(status: Int, service: BluetoothGattService?) {
+            android.util.Log.i(TAG, "onServiceAdded status=$status")
+            if (status != BluetoothGatt.GATT_SUCCESS) return
+            val bt = adapter ?: return
+            advertising = true
+            NameBeacon.startHelper(bt, ParcelUuid(SERVICE))
             emit()
         }
 
@@ -56,6 +67,15 @@ class BleHidServer(private val context: Context) {
             server?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, characteristic?.value)
         }
 
+        override fun onDescriptorReadRequest(
+            device: BluetoothDevice?,
+            requestId: Int,
+            offset: Int,
+            descriptor: android.bluetooth.BluetoothGattDescriptor?,
+        ) {
+            server?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, descriptor?.value)
+        }
+
         override fun onDescriptorWriteRequest(
             device: BluetoothDevice?,
             requestId: Int,
@@ -65,6 +85,13 @@ class BleHidServer(private val context: Context) {
             offset: Int,
             value: ByteArray?,
         ) {
+            if (descriptor != null && value != null) {
+                descriptor.value = value
+            }
+            val enabled = value != null && value.isNotEmpty() && (value[0].toInt() and 0x01) != 0
+            if (device != null) {
+                if (enabled) notifyEnabled.add(device) else notifyEnabled.remove(device)
+            }
             if (responseNeeded) {
                 server?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value)
             }
@@ -73,8 +100,10 @@ class BleHidServer(private val context: Context) {
 
     @SuppressLint("MissingPermission")
     fun start(): Boolean {
+        stop()
         val bt = adapter ?: return false
         if (!bt.isEnabled) return false
+        if (bt.bluetoothLeAdvertiser == null) return false
         BluetoothIdentity.apply(bt)
         val gatt = manager?.openGattServer(context, gattCallback) ?: return false
         val service = BluetoothGattService(SERVICE, BluetoothGattService.SERVICE_TYPE_PRIMARY)
@@ -82,15 +111,11 @@ class BleHidServer(private val context: Context) {
         mouseChar = notifyChar(MOUSE)
         service.addCharacteristic(keyboardChar)
         service.addCharacteristic(mouseChar)
-        gatt.addService(service)
-        server = gatt
-        if (bt.bluetoothLeAdvertiser == null) {
-            server?.close()
-            server = null
+        if (!gatt.addService(service)) {
+            gatt.close()
             return false
         }
-        advertising = true
-        NameBeacon.startHelper(bt, ParcelUuid(SERVICE))
+        server = gatt
         emit()
         return true
     }
@@ -106,6 +131,7 @@ class BleHidServer(private val context: Context) {
         keyboardChar = null
         mouseChar = null
         centrals.clear()
+        notifyEnabled.clear()
         advertising = false
         connected = false
         deviceName = ""
@@ -130,13 +156,30 @@ class BleHidServer(private val context: Context) {
     private fun notify(characteristic: BluetoothGattCharacteristic?, payload: ByteArray): Boolean {
         val gatt = server ?: return false
         val char = characteristic ?: return false
-        if (centrals.isEmpty()) return false
+        val targets = if (notifyEnabled.isEmpty()) centrals else notifyEnabled
+        if (targets.isEmpty()) return false
         char.value = payload
         var ok = false
-        for (device in centrals) {
-            ok = gatt.notifyCharacteristicChanged(device, char, false) || ok
+        for (device in targets) {
+            ok = notifyDevice(gatt, device, char, payload) || ok
         }
         return ok
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun notifyDevice(
+        gatt: BluetoothGattServer,
+        device: BluetoothDevice,
+        characteristic: BluetoothGattCharacteristic,
+        payload: ByteArray,
+    ): Boolean {
+        return if (android.os.Build.VERSION.SDK_INT >= 33) {
+            gatt.notifyCharacteristicChanged(device, characteristic, false, payload) ==
+                BluetoothGatt.GATT_SUCCESS
+        } else {
+            @Suppress("DEPRECATION")
+            gatt.notifyCharacteristicChanged(device, characteristic, false)
+        }
     }
 
     private fun notifyChar(uuid: UUID): BluetoothGattCharacteristic {
