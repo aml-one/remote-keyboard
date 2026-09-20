@@ -1,92 +1,77 @@
 {
     "remoteKeyboardAndroid":  {
-                                  "version":  "1.0.2",
-                                  "buildNumber":  10002,
-                                  "label":  "v1.0.2-260920",
-                                  "file":  "remotekeyboard-android-arm64-v1.0.2-260920.apk",
+                                  "version":  "1.0.3",
+                                  "buildNumber":  10003,
+                                  "label":  "v1.0.3-260920",
+                                  "file":  "remotekeyboard-android-arm64-v1.0.3-260920.apk",
                                   "sizeBytes":  18796284,
-                                  "sha256":  "6005ae54ed57e9a187d876d547a937e6dcf613c75f4806ddfe956b4b55de3373",
-                                  "publishedAt":  "2026-09-20T17:04:30.6391588Z",
+                                  "sha256":  "376e5b3868d24b6de305e58e4aa3ee967f1a6f5028e3a449b3e69471ddc4b85b",
+                                  "publishedAt":  "2026-09-20T18:15:15.6752472Z",
                                   "changelog":  [
-                                                    "[improvement] Settings picks Bluetooth or Helper, and Connect stays on that path",
-                                                    "[improvement] Helper connection status shows the computer name without a Helper prefix",
-                                                    "[bugfix] AmL One GET finds the Android APK",
-                                                    "[bugfix] AmL One GET installs the Windows, Ubuntu, and Mac helpers from a zip",
-                                                    "[bugfix] Helper finds the phone advertised as AOW Keyboard",
-                                                    "[bugfix] Helper types keys and moves the mouse after it finds the phone",
-                                                    "[bugfix] Connection status wraps on a normal-width phone instead of trimming with an ellipsis"
+                                                    "[improvement] Helper window shows an AmL status card instead of a blank pane",
+                                                    "[improvement] Closing the helper hides it next to the clock instead of quitting",
+                                                    "[bugfix] Helper types AZERTY keys as the letters on the pad, matching Bluetooth HID",
+                                                    "[bugfix] Helper mouse and keystrokes feel snappier (hold keys, coalesce pointer moves)"
                                                 ]
                               },
     "remoteKeyboardWindows":  {
-                                  "version":  "1.0.2",
-                                  "buildNumber":  10002,
-                                  "label":  "v1.0.2-260920",
-                                  "file":  "remotekeyboard-windows-x64-v1.0.2-260920.zip",
-                                  "sizeBytes":  453631,
-                                  "sha256":  "e595fa50e52422d9cbe6aedeb92af4ef712d1c09d63440ae68ef30cfc2139f17",
-                                  "publishedAt":  "2026-09-20T17:04:30.6391588Z",
+                                  "version":  "1.0.3",
+                                  "buildNumber":  10003,
+                                  "label":  "v1.0.3-260920",
+                                  "file":  "remotekeyboard-windows-x64-v1.0.3-260920.zip",
+                                  "sizeBytes":  735057,
+                                  "sha256":  "d770136a6b9abd1580477411b3a4596083e8cc5ff32e2d3bcdc0720289fbbf5e",
+                                  "publishedAt":  "2026-09-20T18:15:15.6752472Z",
                                   "changelog":  [
-                                                    "[improvement] Settings picks Bluetooth or Helper, and Connect stays on that path",
-                                                    "[improvement] Helper connection status shows the computer name without a Helper prefix",
-                                                    "[bugfix] AmL One GET finds the Android APK",
-                                                    "[bugfix] AmL One GET installs the Windows, Ubuntu, and Mac helpers from a zip",
-                                                    "[bugfix] Helper finds the phone advertised as AOW Keyboard",
-                                                    "[bugfix] Helper types keys and moves the mouse after it finds the phone",
-                                                    "[bugfix] Connection status wraps on a normal-width phone instead of trimming with an ellipsis"
+                                                    "[improvement] Helper window shows an AmL status card instead of a blank pane",
+                                                    "[improvement] Closing the helper hides it next to the clock instead of quitting",
+                                                    "[bugfix] Helper types AZERTY keys as the letters on the pad, matching Bluetooth HID",
+                                                    "[bugfix] Helper mouse and keystrokes feel snappier (hold keys, coalesce pointer moves)"
                                                 ]
                               },
     "remoteKeyboardLinux":  {
-                                "version":  "1.0.2",
-                                "buildNumber":  10002,
-                                "label":  "v1.0.2-260920",
-                                "file":  "remotekeyboard-linux-x64-v1.0.2-260920.zip",
-                                "sizeBytes":  930959,
-                                "sha256":  "69e527df3bee9985b6e04e97e34662c4518df9d172fe5362a7f1d72d2afa35ec",
-                                "publishedAt":  "2026-09-20T17:04:30.6391588Z",
+                                "version":  "1.0.3",
+                                "buildNumber":  10003,
+                                "label":  "v1.0.3-260920",
+                                "file":  "remotekeyboard-linux-x64-v1.0.3-260920.zip",
+                                "sizeBytes":  1320824,
+                                "sha256":  "252dbd6af9978a29bf99f4f62f3e310c1b8c794a6475a8a320876f13f9e4441c",
+                                "publishedAt":  "2026-09-20T18:15:15.6752472Z",
                                 "changelog":  [
-                                                  "[improvement] Settings picks Bluetooth or Helper, and Connect stays on that path",
-                                                  "[improvement] Helper connection status shows the computer name without a Helper prefix",
-                                                  "[bugfix] AmL One GET finds the Android APK",
-                                                  "[bugfix] AmL One GET installs the Windows, Ubuntu, and Mac helpers from a zip",
-                                                  "[bugfix] Helper finds the phone advertised as AOW Keyboard",
-                                                  "[bugfix] Helper types keys and moves the mouse after it finds the phone",
-                                                  "[bugfix] Connection status wraps on a normal-width phone instead of trimming with an ellipsis"
+                                                  "[improvement] Helper window shows an AmL status card instead of a blank pane",
+                                                  "[improvement] Closing the helper hides it next to the clock instead of quitting",
+                                                  "[bugfix] Helper types AZERTY keys as the letters on the pad, matching Bluetooth HID",
+                                                  "[bugfix] Helper mouse and keystrokes feel snappier (hold keys, coalesce pointer moves)"
                                               ]
                             },
     "remoteKeyboardMacos":  {
-                                "version":  "1.0.2",
-                                "buildNumber":  10002,
-                                "label":  "v1.0.2-260920",
-                                "file":  "remotekeyboard-macos-arm64-v1.0.2-260920.zip",
-                                "sizeBytes":  666679,
-                                "sha256":  "35136efd8b8d4f9cbbf8cd10f4eee9867f161fecf2d6823448586f092065cb54",
-                                "publishedAt":  "2026-09-20T17:04:30.6391588Z",
+                                "version":  "1.0.3",
+                                "buildNumber":  10003,
+                                "label":  "v1.0.3-260920",
+                                "file":  "remotekeyboard-macos-arm64-v1.0.3-260920.zip",
+                                "sizeBytes":  895704,
+                                "sha256":  "12d4c3d254653e0e2bf70caaacf07da75e7dee365cff1ad6f379f6570df3c716",
+                                "publishedAt":  "2026-09-20T18:15:15.6752472Z",
                                 "changelog":  [
-                                                  "[improvement] Settings picks Bluetooth or Helper, and Connect stays on that path",
-                                                  "[improvement] Helper connection status shows the computer name without a Helper prefix",
-                                                  "[bugfix] AmL One GET finds the Android APK",
-                                                  "[bugfix] AmL One GET installs the Windows, Ubuntu, and Mac helpers from a zip",
-                                                  "[bugfix] Helper finds the phone advertised as AOW Keyboard",
-                                                  "[bugfix] Helper types keys and moves the mouse after it finds the phone",
-                                                  "[bugfix] Connection status wraps on a normal-width phone instead of trimming with an ellipsis"
+                                                  "[improvement] Helper window shows an AmL status card instead of a blank pane",
+                                                  "[improvement] Closing the helper hides it next to the clock instead of quitting",
+                                                  "[bugfix] Helper types AZERTY keys as the letters on the pad, matching Bluetooth HID",
+                                                  "[bugfix] Helper mouse and keystrokes feel snappier (hold keys, coalesce pointer moves)"
                                               ]
                             },
     "remoteKeyboardMacosIntel":  {
-                                     "version":  "1.0.2",
-                                     "buildNumber":  10002,
-                                     "label":  "v1.0.2-260920",
-                                     "file":  "remotekeyboard-macos-x64-v1.0.2-260920.zip",
-                                     "sizeBytes":  710601,
-                                     "sha256":  "e48bc8c3beca3001e6993672ba98f761f9387e946a9417fa70db48528b57011e",
-                                     "publishedAt":  "2026-09-20T17:04:30.6391588Z",
+                                     "version":  "1.0.3",
+                                     "buildNumber":  10003,
+                                     "label":  "v1.0.3-260920",
+                                     "file":  "remotekeyboard-macos-x64-v1.0.3-260920.zip",
+                                     "sizeBytes":  970282,
+                                     "sha256":  "67eb2494a58e7711f45bdb5bf52c0bb5521dd44f82dc7583432b126632759edc",
+                                     "publishedAt":  "2026-09-20T18:15:15.6752472Z",
                                      "changelog":  [
-                                                       "[improvement] Settings picks Bluetooth or Helper, and Connect stays on that path",
-                                                       "[improvement] Helper connection status shows the computer name without a Helper prefix",
-                                                       "[bugfix] AmL One GET finds the Android APK",
-                                                       "[bugfix] AmL One GET installs the Windows, Ubuntu, and Mac helpers from a zip",
-                                                       "[bugfix] Helper finds the phone advertised as AOW Keyboard",
-                                                       "[bugfix] Helper types keys and moves the mouse after it finds the phone",
-                                                       "[bugfix] Connection status wraps on a normal-width phone instead of trimming with an ellipsis"
+                                                       "[improvement] Helper window shows an AmL status card instead of a blank pane",
+                                                       "[improvement] Closing the helper hides it next to the clock instead of quitting",
+                                                       "[bugfix] Helper types AZERTY keys as the letters on the pad, matching Bluetooth HID",
+                                                       "[bugfix] Helper mouse and keystrokes feel snappier (hold keys, coalesce pointer moves)"
                                                    ]
                                  }
 }

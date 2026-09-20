@@ -15,9 +15,68 @@ use enigo::{Axis, Button, Coordinate, Direction, Enigo, Keyboard, Mouse, Setting
 use futures::StreamExt;
 use uuid::Uuid;
 
+mod hid_raw;
+mod ui;
+
 enum InjectCmd {
     Keyboard(Vec<u8>),
     Mouse(Vec<u8>),
+}
+
+struct Injector {
+    enigo: Enigo,
+    mods: u8,
+    keys: [u8; 6],
+    buttons: u8,
+    mouse_dx: i32,
+    mouse_dy: i32,
+    mouse_wheel: i32,
+}
+
+impl Injector {
+    fn new(enigo: Enigo) -> Self {
+        Self {
+            enigo,
+            mods: 0,
+            keys: [0; 6],
+            buttons: 0,
+            mouse_dx: 0,
+            mouse_dy: 0,
+            mouse_wheel: 0,
+        }
+    }
+
+    fn apply_keyboard(&mut self, frame: &[u8]) {
+        self.flush_mouse();
+        inject_keyboard(&mut self.enigo, frame, &mut self.mods, &mut self.keys);
+    }
+
+    fn queue_mouse(&mut self, frame: &[u8]) {
+        if frame.len() < 5 || frame[0] != 0x02 {
+            return;
+        }
+        let buttons = frame[1];
+        if buttons != self.buttons {
+            self.flush_mouse();
+            apply_buttons(&mut self.enigo, self.buttons, buttons);
+            self.buttons = buttons;
+        }
+        self.mouse_dx += frame[2] as i8 as i32;
+        self.mouse_dy += frame[3] as i8 as i32;
+        self.mouse_wheel += frame[4] as i8 as i32;
+    }
+
+    fn flush_mouse(&mut self) {
+        if self.mouse_dx != 0 || self.mouse_dy != 0 {
+            move_pointer_rel(&mut self.enigo, self.mouse_dx, self.mouse_dy);
+            self.mouse_dx = 0;
+            self.mouse_dy = 0;
+        }
+        if self.mouse_wheel != 0 {
+            let _ = self.enigo.scroll(self.mouse_wheel, Axis::Vertical);
+            self.mouse_wheel = 0;
+        }
+    }
 }
 
 /// Enigo is not `Send` on macOS (`CGEventSource`). Own it on a dedicated
@@ -27,19 +86,30 @@ fn spawn_injector() -> Sender<InjectCmd> {
     std::thread::Builder::new()
         .name("rk-inject".into())
         .spawn(move || {
-            let mut enigo = match Enigo::new(&Settings::default()) {
+            let mut settings = Settings::default();
+            settings.linux_delay = 0;
+            // Relative SendInput, not 0–65535 absolute (that path jitters).
+            settings.windows_subject_to_mouse_speed_and_acceleration_level = true;
+            let enigo = match Enigo::new(&settings) {
                 Ok(enigo) => enigo,
                 Err(error) => {
                     eprintln!("helper: injector {error}");
                     return;
                 }
             };
-            let mut last_buttons: u8 = 0;
-            while let Ok(cmd) = rx.recv() {
-                match cmd {
-                    InjectCmd::Keyboard(frame) => inject_keyboard(&mut enigo, &frame),
-                    InjectCmd::Mouse(frame) => inject_mouse(&mut enigo, &frame, &mut last_buttons),
+            let mut inj = Injector::new(enigo);
+            while let Ok(first) = rx.recv() {
+                match first {
+                    InjectCmd::Keyboard(frame) => inj.apply_keyboard(&frame),
+                    InjectCmd::Mouse(frame) => inj.queue_mouse(&frame),
                 }
+                while let Ok(more) = rx.try_recv() {
+                    match more {
+                        InjectCmd::Keyboard(frame) => inj.apply_keyboard(&frame),
+                        InjectCmd::Mouse(frame) => inj.queue_mouse(&frame),
+                    }
+                }
+                inj.flush_mouse();
             }
         })
         .expect("inject thread");
@@ -86,7 +156,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     });
-    run_ui();
+    ui::run_ui();
     Ok(())
 }
 
@@ -96,49 +166,6 @@ fn status_title() -> &'static str {
     } else {
         "Remote Keyboard · waiting"
     }
-}
-
-fn spawn_tray() -> Option<tray_icon::TrayIcon> {
-    tray_icon::TrayIconBuilder::new()
-        .with_tooltip(status_title())
-        .build()
-        .ok()
-}
-
-fn run_ui() {
-    let event_loop = tao::event_loop::EventLoop::new();
-    let window = tao::window::WindowBuilder::new()
-        .with_title(status_title())
-        .with_inner_size(tao::dpi::LogicalSize::new(420.0, 148.0))
-        .with_resizable(false)
-        .build(&event_loop)
-        .ok();
-    let tray = spawn_tray();
-    let mut last = CONNECTED.load(Ordering::Relaxed);
-    event_loop.run(move |event, _, control_flow| {
-        *control_flow = tao::event_loop::ControlFlow::WaitUntil(
-            std::time::Instant::now() + Duration::from_millis(400),
-        );
-        let connected = CONNECTED.load(Ordering::Relaxed);
-        if connected != last {
-            last = connected;
-            let title = status_title();
-            if let Some(ref window) = window {
-                window.set_title(title);
-            }
-            if let Some(ref tray) = tray {
-                let _ = tray.set_tooltip(Some(title));
-            }
-        }
-        if let tao::event::Event::WindowEvent {
-            event: tao::event::WindowEvent::CloseRequested,
-            ..
-        } = event
-        {
-            *control_flow = tao::event_loop::ControlFlow::Exit;
-            std::process::exit(0);
-        }
-    });
 }
 
 async fn run_once() -> Result<(), Box<dyn std::error::Error>> {
@@ -270,112 +297,95 @@ async fn serve_peripheral(
     Ok(())
 }
 
-fn hid_to_key(hid: u8) -> Option<enigo::Key> {
-    use enigo::Key;
-    match hid {
-        0x04..=0x1d => Some(Key::Unicode((b'a' + (hid - 0x04)) as char)),
-        0x1e => Some(Key::Unicode('1')),
-        0x1f => Some(Key::Unicode('2')),
-        0x20 => Some(Key::Unicode('3')),
-        0x21 => Some(Key::Unicode('4')),
-        0x22 => Some(Key::Unicode('5')),
-        0x23 => Some(Key::Unicode('6')),
-        0x24 => Some(Key::Unicode('7')),
-        0x25 => Some(Key::Unicode('8')),
-        0x26 => Some(Key::Unicode('9')),
-        0x27 => Some(Key::Unicode('0')),
-        0x28 => Some(Key::Return),
-        0x29 => Some(Key::Escape),
-        0x2a => Some(Key::Backspace),
-        0x2b => Some(Key::Tab),
-        0x2c => Some(Key::Space),
-        0x2d => Some(Key::Unicode('-')),
-        0x2e => Some(Key::Unicode('=')),
-        0x33 => Some(Key::Unicode(';')),
-        0x34 => Some(Key::Unicode('\'')),
-        0x36 => Some(Key::Unicode(',')),
-        0x37 => Some(Key::Unicode('.')),
-        0x38 => Some(Key::Unicode('/')),
-        0x4c => Some(Key::Delete),
-        0x4f => Some(Key::RightArrow),
-        0x50 => Some(Key::LeftArrow),
-        0x51 => Some(Key::DownArrow),
-        0x52 => Some(Key::UpArrow),
-        _ => None,
+fn inject_key(enigo: &mut Enigo, hid: u8, direction: Direction) {
+    if let Some(key) = hid_raw::hid_named(hid) {
+        let _ = enigo.key(key, direction);
+    } else if let Some(raw) = hid_raw::hid_raw(hid) {
+        let _ = enigo.raw(raw, direction);
     }
 }
 
-fn inject_keyboard(enigo: &mut Enigo, frame: &[u8]) {
+fn inject_keyboard(enigo: &mut Enigo, frame: &[u8], mods: &mut u8, keys: &mut [u8; 6]) {
     if frame.len() < 9 || frame[0] != 0x01 {
         return;
     }
-    let mods = frame[1];
-    let _ = enigo.key(
-        enigo::Key::Control,
-        if mods & 0x01 != 0 {
-            Direction::Press
-        } else {
-            Direction::Release
-        },
-    );
-    let _ = enigo.key(
-        enigo::Key::Shift,
-        if mods & 0x02 != 0 {
-            Direction::Press
-        } else {
-            Direction::Release
-        },
-    );
-    let _ = enigo.key(
-        enigo::Key::Alt,
-        if mods & 0x04 != 0 {
-            Direction::Press
-        } else {
-            Direction::Release
-        },
-    );
-    let _ = enigo.key(
-        enigo::Key::Meta,
-        if mods & 0x08 != 0 {
-            Direction::Press
-        } else {
-            Direction::Release
-        },
-    );
-    for hid in &frame[3..9] {
-        if *hid == 0 {
+    let next_mods = frame[1];
+    let mut next_keys = [0u8; 6];
+    next_keys.copy_from_slice(&frame[3..9]);
+
+    fn set_mod(enigo: &mut Enigo, old: u8, new: u8, bit: u8, key: enigo::Key) {
+        let was = old & bit != 0;
+        let now = new & bit != 0;
+        if was == now {
+            return;
+        }
+        let _ = enigo.key(
+            key,
+            if now {
+                Direction::Press
+            } else {
+                Direction::Release
+            },
+        );
+    }
+    set_mod(enigo, *mods, next_mods, 0x01, enigo::Key::Control);
+    set_mod(enigo, *mods, next_mods, 0x02, enigo::Key::Shift);
+    set_mod(enigo, *mods, next_mods, 0x04, enigo::Key::Alt);
+    set_mod(enigo, *mods, next_mods, 0x08, enigo::Key::Meta);
+    *mods = next_mods;
+
+    for hid in keys.iter() {
+        if *hid == 0 || next_keys.contains(hid) {
             continue;
         }
-        if let Some(key) = hid_to_key(*hid) {
-            let _ = enigo.key(key, Direction::Click);
-        }
+        inject_key(enigo, *hid, Direction::Release);
     }
+    for hid in next_keys.iter() {
+        if *hid == 0 || keys.contains(hid) {
+            continue;
+        }
+        inject_key(enigo, *hid, Direction::Press);
+    }
+    *keys = next_keys;
 }
 
-fn inject_mouse(enigo: &mut Enigo, frame: &[u8], last_buttons: &mut u8) {
-    if frame.len() < 5 || frame[0] != 0x02 {
-        return;
-    }
-    let buttons = frame[1];
-    let dx = frame[2] as i8 as i32;
-    let dy = frame[3] as i8 as i32;
-    let wheel = frame[4] as i8 as i32;
-    if dx != 0 || dy != 0 {
-        let _ = enigo.move_mouse(dx, dy, Coordinate::Rel);
-    }
-    if wheel != 0 {
-        let _ = enigo.scroll(wheel, Axis::Vertical);
-    }
+fn apply_buttons(enigo: &mut Enigo, old: u8, new: u8) {
     for (bit, button) in [(1, Button::Left), (2, Button::Right), (4, Button::Middle)] {
-        let down = buttons & bit != 0;
-        let was = *last_buttons & bit != 0;
+        let down = new & bit != 0;
+        let was = old & bit != 0;
         if down && !was {
             let _ = enigo.button(button, Direction::Press);
         } else if !down && was {
             let _ = enigo.button(button, Direction::Release);
         }
     }
-    *last_buttons = buttons;
+}
+
+fn move_pointer_rel(enigo: &mut Enigo, dx: i32, dy: i32) {
+    if dx == 0 && dy == 0 {
+        return;
+    }
+    #[cfg(windows)]
+    {
+        // Pixel-accurate. Enigo's default Rel→Abs 0–65535 mapping jitters.
+        #[repr(C)]
+        struct Point {
+            x: i32,
+            y: i32,
+        }
+        extern "system" {
+            fn GetCursorPos(point: *mut Point) -> i32;
+            fn SetCursorPos(x: i32, y: i32) -> i32;
+        }
+        let mut point = Point { x: 0, y: 0 };
+        unsafe {
+            if GetCursorPos(&mut point) != 0 {
+                let _ = SetCursorPos(point.x + dx, point.y + dy);
+                return;
+            }
+        }
+    }
+    let _ = enigo.move_mouse(dx, dy, Coordinate::Rel);
 }
 
 #[cfg(test)]
@@ -389,5 +399,12 @@ mod tests {
         assert!(advertised_name_matches("Remote Keyboard"));
         assert!(!advertised_name_matches("AirPods"));
         assert!(!advertised_name_matches(""));
+    }
+
+    #[test]
+    fn azerty_a_sends_physical_q_position() {
+        // Pad AZERTY A → HID 0x14 (US Q). Helper must inject that position.
+        assert!(hid_raw::hid_named(0x14).is_none());
+        assert!(hid_raw::hid_raw(0x14).is_some());
     }
 }
